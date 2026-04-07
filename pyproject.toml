@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fractal_strategy"
+version = "0.1.0"
+description = "Library for Hurst-based trading strategies."
+authors = [
+  {name = "Your Name", email = "you@example.com"},
+]
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = [
+  "numpy",
+  "pandas",
+  "yfinance",
+  "matplotlib",
+  "scipy",
+  "scikit-learn",
+  "torch>=2.0",
+]
+
+[tool.setuptools.packages]
+find = { exclude = ["archive*"] }
+
+[project.scripts]
+fractal-run = "oi:main"  # placeholder if main function exists
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
