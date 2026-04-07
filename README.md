@@ -1,0 +1,82 @@
+# IC-2025-2026
+
+Biblioteca e scripts para estratégia de negociação baseada no expoente de
+Hurst. Contém ferramentas para baixar dados, calcular o expoente via DFA,
+clusterizar com PCA+KMeans, executar backtests e analisar resultados.
+
+Além disso o diretório inclui uma coleção de artigos científicos sobre
+Hurst/fractalidade; um utilitário gera resumos automáticos desses PDFs
+(veja `literature.py`).
+
+## Como usar
+
+1. Crie um ambiente Python e instale dependências:
+
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   pip install -e .          # instala fractal_strategy e o script `fractal-run`
+   ```
+
+2. Execute a estratégia em vários ativos:
+
+   ```bash
+   fractal-run
+   ```
+
+3. Execute com redes neurais ou clustering
+
+   ```bash
+   # cluster (default)
+   fractal-run --assets PETR4.SA
+
+   # redes neurais (LSTM, GRU, Transformer, etc.)
+   fractal-run --method neural --arch transformer --arch-window 30 --arch-epochs 20
+   ```
+
+   Arquiteturas suportadas:
+   ``lstm``, ``gru``, ``transformer``, ``tft``, ``nbeats``, ``nhits``,
+   ``gnn``, ``hybrid`` (Transformer+GNN), ``sph`` (SPH-Net stub).
+
+   * ``lstm``/``gru``/``transformer`` exigem apenas **torch**.
+   * ``tft``, ``nbeats`` e ``nhits`` dependem de **pytorch-forecasting**.
+   * ``gnn``/``hybrid`` precisam de **torch-geometric** e talvez outros pacotes
+     de grafos.
+   * ``sph`` é apenas um placeholder; sua implementação deve ser adicionada
+     manualmente.
+
+   Estas bibliotecas são volumosas e podem instalar centenas de megabytes de
+   dependências (especialmente ``torch`` e ``torch-geometric``), então garanta
+   espaço de disco suficiente. Instale cada componente conforme necessário,
+   por exemplo:
+
+   ```bash
+   pip install torch               # já listado em requirements
+   pip install pytorch-forecasting # para TFT/N-BEATS/N-HiTS
+   pip install torch-geometric     # para GNN/híbrido
+   ```
+
+   O projeto verifica a presença de cada pacote e gerará uma mensagem de
+   erro se faltar alguma dependência quando você tentar usar a arquitetura
+   correspondente.
+
+4. Extraia textos ou resuma os PDFs com:
+
+   ```bash
+   python pdf_reader.py        # mostra primeiras linhas de cada artigo
+   python literature.py        # produz `LITERATURE.md` com títulos/abstracts
+   ```
+
+4. Rode os testes unitários se desejar:
+
+   ```bash
+   pytest tests/test_hurst.py
+   ```
+
+> ⚠️ **Arquivos legados**: versões antigas dos scripts (`m.py`, `husrt.py`,
+> `estrategiav1.py`, `estatistica.py`, `dados27-11-2025.py` etc.), além de
+> planilhas e coleções de slides, foram movidos para a pasta `archive/` (veja
+> `archive/extra`). Eles existem apenas para referência histórica e não são
+> necessários para execução.
+
