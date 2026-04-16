@@ -1,3 +1,2 @@
 fractal_strategy
-tests
 venv

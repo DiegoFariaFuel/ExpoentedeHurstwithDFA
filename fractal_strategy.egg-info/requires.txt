@@ -4,4 +4,3 @@ yfinance
 matplotlib
 scipy
 scikit-learn
-torch>=2.0

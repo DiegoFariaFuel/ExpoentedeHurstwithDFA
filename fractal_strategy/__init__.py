@@ -9,7 +9,7 @@ The package is intentionally lightweight and dependency-aware.
 
 from .data import download_price
 from .hurst import hurst_exponent, hurst_series
-from .strategy import run_pca_kmeans, interpret_clusters, generate_signals, apply_neural
+from .strategy import run_pca_kmeans, interpret_clusters, generate_signals
 from .backtest import backtest, performance_metrics
 
 __all__ = [
@@ -19,7 +19,6 @@ __all__ = [
     "run_pca_kmeans",
     "interpret_clusters",
     "generate_signals",
-    "apply_neural",
     "backtest",
     "performance_metrics",
 ]

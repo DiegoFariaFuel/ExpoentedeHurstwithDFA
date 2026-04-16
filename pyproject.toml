@@ -18,7 +18,6 @@ dependencies = [
   "matplotlib",
   "scipy",
   "scikit-learn",
-  "torch>=2.0",
 ]
 
 [tool.setuptools.packages]
@@ -26,6 +25,3 @@ find = { exclude = ["archive*"] }
 
 [project.scripts]
 fractal-run = "oi:main"  # placeholder if main function exists
-
-[tool.poetry.dev-dependencies]
-pytest = "*"

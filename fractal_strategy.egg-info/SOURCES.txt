@@ -5,14 +5,9 @@ fractal_strategy/backtest.py
 fractal_strategy/data.py
 fractal_strategy/hurst.py
 fractal_strategy/strategy.py
-fractal_strategy/transformer_model.py
 fractal_strategy.egg-info/PKG-INFO
 fractal_strategy.egg-info/SOURCES.txt
 fractal_strategy.egg-info/dependency_links.txt
 fractal_strategy.egg-info/entry_points.txt
 fractal_strategy.egg-info/requires.txt
 fractal_strategy.egg-info/top_level.txt
-tests/test_cli.py
-tests/test_hurst.py
-tests/test_neural.py
-tests/test_strategy.py

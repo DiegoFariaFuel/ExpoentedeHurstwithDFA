@@ -22,7 +22,7 @@ def download_price(ticker: str, start: str = "2010-01-01", end: str = None) -> p
     Raises
     ------
     ValueError
-        If no data could be downloaded for the ticker.
+        If no data could be downloaded for the ticker. 
     """
     kwargs = {"start": start}
     if end:

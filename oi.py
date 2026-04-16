@@ -6,14 +6,43 @@ import warnings
 from fractal_strategy import (
     download_price, hurst_series,
     run_pca_kmeans, interpret_clusters, generate_signals,
-    backtest, performance_metrics, apply_neural
+    backtest, performance_metrics
 )
 
 warnings.filterwarnings('ignore')
 
 DEFAULT_ASSETS = [
-    "PETR4.SA", "VALE3.SA", "ITUB4.SA", "BBDC4.SA", "ABEV3.SA",
-    "B3SA3.SA", "GGBR4.SA", "^BVSP", "AAPL", "MSFT", "SPY"
+    # === PETRÓLEO E ENERGIA ===
+    "PETR4.SA", "PETR3.SA", "PRIO3.SA", "UGPA3.SA", "CSAN3.SA",
+    
+    # === MINERAÇÃO ===
+    "VALE3.SA", "GGBR4.SA", "CSNA3.SA", "USIM5.SA", "GOAU4.SA",
+    
+    # === BANCOS ===
+    "ITUB4.SA", "ITSA4.SA", "BBDC4.SA", "BBAS3.SA", "SANB11.SA", "BPAC11.SA",
+    
+    # === BEBIDAS E ALIMENTOS ===
+    "ABEV3.SA", "JBSS3.SA", "MRFG3.SA", "BEEF3.SA", "CAML3.SA",
+    
+    # === TECNOLOGIA E TELECOM ===
+    "B3SA3.SA", "VIVT3.SA", "TIMS3.SA", "MGLU3.SA", "AMER3.SA",
+    
+    # === CONSTRUÇÃO E IMÓVEIS ===
+    "CYRE3.SA", "EZTC3.SA", "MRVE3.SA", "TEND3.SA", "DIRR3.SA",
+    
+    # === SAÚDE ===
+    "RADL3.SA", "HYPE3.SA", "FLRY3.SA", "QUAL3.SA", "RDOR3.SA",
+    
+    # === VAREJO ===
+    "LREN3.SA", "PETZ3.SA", "VIIA3.SA", "SOMA3.SA", "BHIA3.SA",
+    
+    # === ÍNDICES BRASILEIROS ===
+    "^BVSP", "^IBX50", "^IBOV",
+    
+    # === AÇÕES INTERNACIONAIS ===
+    "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "NVDA", "META", "NFLX",
+    "JPM", "BAC", "WMT", "KO", "PFE", "JNJ", "V", "MA", "HD", "MCD",
+    "SPY", "QQQ", "IWM", "VTI", "BND", "GLD"
 ]
 
 DEFAULT_WINDOWS = [50, 100, 150, 200, 300, 400]
@@ -118,110 +147,12 @@ def main():
                         help='comma-separated Hurst window sizes')
     parser.add_argument('--output', '-o', type=str, default=None,
                         help='filename to save result table (CSV)')
-    parser.add_argument('--method', choices=['cluster','neural'], default='cluster',
-                        help='which strategy to use for signal generation')
-    parser.add_argument('--arch', choices=['lstm','gru','transformer','tft','nbeats','nhits','gnn','hybrid','sph'],
-                        default='transformer', help='neural architecture to employ')
-    parser.add_argument('--arch-window', type=int, default=30,
-                        help='window length for neural model training')
-    parser.add_argument('--arch-epochs', type=int, default=10,
-                        help='training epochs for neural model')
-    parser.add_argument('--arch-lr', type=float, default=1e-3,
-                        help='learning rate for neural model')
-    parser.add_argument('--auto-tune', action='store_true',
-                        help='perform automatic grid search for neural parameters')
-    parser.add_argument('--param-grid', type=str, default=None,
-                        help='JSON string specifying grid for tuning')
     args = parser.parse_args()
 
     ativos = parse_assets(args.assets)
     windows = [int(x) for x in args.windows.split(',') if x]
-    # choose processing method
-    if args.method == 'cluster':
-        df_res = process_ativos(ativos=ativos, janelas=windows, start=args.start, end=args.end)
-    else:
-        # neural pipeline: train chosen architecture
-        resultados = []
-        for ativo in ativos:
-            print(f"\nProcessando {ativo} ({args.arch})...")
-            try:
-                preco = download_price(ativo, start=args.start, end=args.end)
-            except ValueError:
-                print(f"Dados insuficientes para {ativo}")
-                continue
-            retornos = np.log(preco / preco.shift(1)).dropna()
-            df = hurst_series(retornos, windows=windows)
-            df.dropna(inplace=True)
-            if len(df) < args.arch_window * 2:
-                print("muitas NaNs, pulando")
-                continue
-            # optionally tune parameters automatically
-            extra_kwargs = {}
-            if args.auto_tune:
-                from fractal_strategy.strategy import grid_search_neural
-                import json
-                grid = None
-                if args.param_grid:
-                    try:
-                        grid = json.loads(args.param_grid)
-                    except Exception:
-                        print("warning: failed to parse param grid, using defaults")
-                if grid is None:
-                    # default grid: try small variations of window/epochs/lr
-                    grid = {
-                        'window': [args.arch_window, max(1, args.arch_window//2)],
-                        'epochs': [args.arch_epochs, max(1, args.arch_epochs//2)],
-                        'lr': [args.arch_lr if hasattr(args,'arch_lr') else 1e-3, 1e-2]
-                    }
-                best, _ = grid_search_neural(df,
-                                            feature_cols=[c for c in df.columns if c.startswith('Hurst_')],
-                                            model_name=args.arch,
-                                            param_grid=grid,
-                                            window=args.arch_window,
-                                            epochs=args.arch_epochs)
-                if best is not None:
-                    print(f"tuning chose parameters {best}")
-                    # apply chosen params to args and extra_kwargs, avoiding
-                    # duplicate keyword names
-                    for key, val in list(best.items()):
-                        if key in ('window', 'epochs', 'lr'):
-                            setattr(args, f'arch_{key}', val)
-                            # don't send these in extra_kwargs as they are
-                            # explicitly provided below
-                        else:
-                            extra_kwargs[key] = val
-            sig = apply_neural(df,
-                                feature_cols=[c for c in df.columns if c.startswith('Hurst_')],
-                                model_name=args.arch,
-                                window=args.arch_window,
-                                epochs=args.arch_epochs,
-                                lr=args.arch_lr,
-                                **extra_kwargs)
-            df['sinal'] = sig
-            df_bt = backtest(df, signal_col='sinal', return_col='retorno')
-            mets = performance_metrics(df_bt)
-            resultados.append({
-                'Ativo': ativo.replace('.SA', '').replace('^', ''),
-                'Retorno Estratégia': f"{mets['retorno_est']:+.2%}",
-                'Retorno B&H': f"{mets['retorno_bh']:+.2%}",
-                'Sharpe Estratégia': round(mets['sharpe_est'], 3),
-                'Sharpe B&H': round(mets['sharpe_bh'], 3),
-                'Max DD Estratégia': f"{mets['dd_est']:.2%}",
-                'Max DD B&H': f"{mets['dd_bh']:.2%}",
-                'p-valor Wilcoxon': f"{mets['p_val']:.4f}",
-                'Vencedor': 'Estratégia' if mets['p_val'] < 0.05 else 'B&H'
-            })
-        df_res = pd.DataFrame(resultados)
-        print("\n" + "="*100)
-        print(f"RESULTADOS FINAIS - ESTRATÉGIA {args.arch.upper()}")
-        print("="*100)
-        if df_res.empty:
-            print("Nenhum ativo processado gerou resultados válidos.")
-        else:
-            print(df_res.to_string(index=False))
-            vitorias = (df_res['Vencedor'] == 'Estratégia').sum()
-            print(f"\nEstratégia venceu em {vitorias}/{len(df_res)} ativos (p < 0.05)")
-            print(f"Taxa de acerto: {vitorias/len(df_res)*100:.1f}%")
+    
+    df_res = process_ativos(ativos=ativos, janelas=windows, start=args.start, end=args.end)
 
     if args.output and not df_res.empty:
         df_res.to_csv(args.output, index=False)

@@ -6,7 +6,7 @@ def hurst_exponent(ts, min_scale: int = 4, max_scale: int = None) -> float:
     Parameters
     ----------
     ts : array-like
-        1‑D series of values (e.g. log returns).
+1‑D series of values (e.g.log returns).
     min_scale : int
         Minimum window size for the DFA.
     max_scale : int or None
